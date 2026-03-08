@@ -1,0 +1,69 @@
+{
+  "name": "readout_prep1_q50",
+  "task_id": "C16D2F3211AA4A7E9EF73878F5F90C6E",
+  "qprog": "QINIT 72\nCREG 1\nX q[50]\nMEASURE q[50],c[0]",
+  "shots": 1000,
+  "counts": {
+    "0x0": 311,
+    "0x1": 689
+  },
+  "raw_detail": {
+    "qcodeTaskNewVo": {
+      "id": null,
+      "encodeId": null,
+      "createTime": null,
+      "userId": 0,
+      "userName": null,
+      "updTime": null,
+      "delFlag": null,
+      "svgPath": null,
+      "initQProg": null,
+      "taskName": null,
+      "taskConfigList": null,
+      "taskResultList": [
+        {
+          "rid": 0,
+          "rTaskId": "C16D2F3211AA4A7E9EF73878F5F90C6E",
+          "qprog": "QINIT 72\nCREG 1\nX q[50]\nMEASURE q[50],c[0]",
+          "rCreateTime": "2026-03-09 05:33:37.595",
+          "taskState": "3",
+          "taskResult": "{\"value\": [0.0090904,0.9909097],\"key\": [\"0\",\"1\"]}",
+          "probCount": "{\"key\":[\"0x0\", \"0x1\"],\"value\":[311, 689]}",
+          "rRelationId": 0,
+          "rQMachineType": "5",
+          "startTime": "2026-03-09 05:33:37.725",
+          "endTime": "2026-03-09 05:33:39.851",
+          "rDelFlag": null,
+          "requiredCore": "1",
+          "rUserId": 0,
+          "mappingQProg": "QINIT 51\nCREG 1\nU3 q[50],(3.14159265,-1.57079633,1.57079633)\nMEASURE q[50],c[0]\n",
+          "timeStr": null,
+          "pulseTime": "30",
+          "circuitExecuteTime": null,
+          "chipExecuteTime": null,
+          "trCircuitOptimization": null,
+          "logicQubit": null,
+          "chipId": 72,
+          "taskName": null,
+          "chipName": null,
+          "chipQubit": null,
+          "errorDetail": null,
+          "errorMessage": null,
+          "trMappingFlag": 0,
+          "queueNumber": 0,
+          "actualStartTime": "2026-03-09 05:33:37.638",
+          "qstresult": null,
+          "qstfidelity": null,
+          "mappingQubit": "[50]",
+          "measureQubitSize": [
+            1
+          ]
+        }
+      ],
+      "qMachineType": null,
+      "resultCount": 0,
+      "totalTime": 0
+    }
+  },
+  "elapsed_s": 2.79713519699726
+}

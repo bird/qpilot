@@ -1,0 +1,69 @@
+{
+  "name": "readout_prep0_q50",
+  "task_id": "3DA724F56BC3E3E033C8C064566C91CA",
+  "qprog": "QINIT 72\nCREG 1\nMEASURE q[50],c[0]",
+  "shots": 1000,
+  "counts": {
+    "0x0": 681,
+    "0x1": 319
+  },
+  "raw_detail": {
+    "qcodeTaskNewVo": {
+      "id": null,
+      "encodeId": null,
+      "createTime": null,
+      "userId": 0,
+      "userName": null,
+      "updTime": null,
+      "delFlag": null,
+      "svgPath": null,
+      "initQProg": null,
+      "taskName": null,
+      "taskConfigList": null,
+      "taskResultList": [
+        {
+          "rid": 0,
+          "rTaskId": "3DA724F56BC3E3E033C8C064566C91CA",
+          "qprog": "QINIT 72\nCREG 1\nMEASURE q[50],c[0]",
+          "rCreateTime": "2026-03-09 05:33:31.452",
+          "taskState": "3",
+          "taskResult": "{\"value\": [0.9974306,0.0025694],\"key\": [\"0\",\"1\"]}",
+          "probCount": "{\"key\":[\"0x0\", \"0x1\"],\"value\":[681, 319]}",
+          "rRelationId": 0,
+          "rQMachineType": "5",
+          "startTime": "2026-03-09 05:33:31.585",
+          "endTime": "2026-03-09 05:33:33.733",
+          "rDelFlag": null,
+          "requiredCore": "1",
+          "rUserId": 0,
+          "mappingQProg": "QINIT 51\nCREG 1\nMEASURE q[50],c[0]\n",
+          "timeStr": null,
+          "pulseTime": "0",
+          "circuitExecuteTime": null,
+          "chipExecuteTime": null,
+          "trCircuitOptimization": null,
+          "logicQubit": null,
+          "chipId": 72,
+          "taskName": null,
+          "chipName": null,
+          "chipQubit": null,
+          "errorDetail": null,
+          "errorMessage": null,
+          "trMappingFlag": 0,
+          "queueNumber": 0,
+          "actualStartTime": "2026-03-09 05:33:31.491",
+          "qstresult": null,
+          "qstfidelity": null,
+          "mappingQubit": "[50]",
+          "measureQubitSize": [
+            1
+          ]
+        }
+      ],
+      "qMachineType": null,
+      "resultCount": 0,
+      "totalTime": 0
+    }
+  },
+  "elapsed_s": 5.680956520998734
+}

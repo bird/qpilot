@@ -1,0 +1,71 @@
+{
+  "name": "zne_bell_x1",
+  "task_id": "D1AD48CB04E1BABDE42CE6C882817D72",
+  "qprog": "QINIT 72\nCREG 2\nH q[56]\nCNOT q[56],q[62]\nMEASURE q[56],c[0]\nMEASURE q[62],c[1]",
+  "shots": 1000,
+  "counts": {
+    "0x0": 492,
+    "0x1": 80,
+    "0x2": 69,
+    "0x3": 359
+  },
+  "raw_detail": {
+    "qcodeTaskNewVo": {
+      "id": null,
+      "encodeId": null,
+      "createTime": null,
+      "userId": 0,
+      "userName": null,
+      "updTime": null,
+      "delFlag": null,
+      "svgPath": null,
+      "initQProg": null,
+      "taskName": null,
+      "taskConfigList": null,
+      "taskResultList": [
+        {
+          "rid": 0,
+          "rTaskId": "D1AD48CB04E1BABDE42CE6C882817D72",
+          "qprog": "QINIT 72\nCREG 2\nH q[56]\nCNOT q[56],q[62]\nMEASURE q[56],c[0]\nMEASURE q[62],c[1]",
+          "rCreateTime": "2026-03-09 05:34:48.535",
+          "taskState": "3",
+          "taskResult": "{\"value\": [0.4756879,2.78E-4,0.0011266,0.5229074],\"key\": [\"00\",\"01\",\"10\",\"11\"]}",
+          "probCount": "{\"key\":[\"0x0\", \"0x1\", \"0x2\", \"0x3\"],\"value\":[492, 80, 69, 359]}",
+          "rRelationId": 0,
+          "rQMachineType": "5",
+          "startTime": "2026-03-09 05:34:48.733",
+          "endTime": "2026-03-09 05:34:50.843",
+          "rDelFlag": null,
+          "requiredCore": "1",
+          "rUserId": 0,
+          "mappingQProg": "QINIT 63\nCREG 2\nU3 q[56],(1.57079633,0.00000000,3.14159265)\nU3 q[62],(0.00000000,0.00000000,1.57079633)\nU3 q[62],(1.57079633,-1.57079633,1.57079633)\nU3 q[62],(0.00000000,0.00000000,1.57079633)\nCZ q[56],q[62]\nU3 q[62],(0.00000000,0.00000000,1.57079633)\nU3 q[62],(1.57079633,-1.57079633,1.57079633)\nU3 q[62],(0.00000000,0.00000000,1.57079633)\nMEASURE q[56],c[0]\nMEASURE q[62],c[1]\n",
+          "timeStr": null,
+          "pulseTime": "100",
+          "circuitExecuteTime": null,
+          "chipExecuteTime": null,
+          "trCircuitOptimization": null,
+          "logicQubit": null,
+          "chipId": 72,
+          "taskName": null,
+          "chipName": null,
+          "chipQubit": null,
+          "errorDetail": null,
+          "errorMessage": null,
+          "trMappingFlag": 0,
+          "queueNumber": 0,
+          "actualStartTime": "2026-03-09 05:34:48.576",
+          "qstresult": null,
+          "qstfidelity": null,
+          "mappingQubit": "[56,62]",
+          "measureQubitSize": [
+            2
+          ]
+        }
+      ],
+      "qMachineType": null,
+      "resultCount": 0,
+      "totalTime": 0
+    }
+  },
+  "elapsed_s": 2.7951029549949453
+}

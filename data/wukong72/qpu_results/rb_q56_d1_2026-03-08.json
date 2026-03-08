@@ -1,0 +1,69 @@
+{
+  "name": "rb_q56_d1",
+  "task_id": "05B1C3B7800FA2BCCC44610229A79951",
+  "qprog": "QINIT 72\nCREG 1\nRX q[56],(1.570796326794897)\nRY q[56],(3.141592653589793)\nRX q[56],(3.141592653589793)\nRX q[56],(3.141592653589793)\nRY q[56],(3.141592653589793)\nRX q[56],(4.712388980384690)\nMEASURE q[56],c[0]",
+  "shots": 1000,
+  "counts": {
+    "0x0": 972,
+    "0x1": 28
+  },
+  "raw_detail": {
+    "qcodeTaskNewVo": {
+      "id": null,
+      "encodeId": null,
+      "createTime": null,
+      "userId": 0,
+      "userName": null,
+      "updTime": null,
+      "delFlag": null,
+      "svgPath": null,
+      "initQProg": null,
+      "taskName": null,
+      "taskConfigList": null,
+      "taskResultList": [
+        {
+          "rid": 0,
+          "rTaskId": "05B1C3B7800FA2BCCC44610229A79951",
+          "qprog": "QINIT 72\nCREG 1\nRX q[56],(1.570796326794897)\nRY q[56],(3.141592653589793)\nRX q[56],(3.141592653589793)\nRX q[56],(3.141592653589793)\nRY q[56],(3.141592653589793)\nRX q[56],(4.712388980384690)\nMEASURE q[56],c[0]",
+          "rCreateTime": "2026-03-09 05:34:17.205",
+          "taskState": "3",
+          "taskResult": "{\"value\": [1,1.0E-7],\"key\": [\"0\",\"1\"]}",
+          "probCount": "{\"key\":[\"0x0\", \"0x1\"],\"value\":[972, 28]}",
+          "rRelationId": 0,
+          "rQMachineType": "5",
+          "startTime": "2026-03-09 05:34:17.368",
+          "endTime": "2026-03-09 05:34:19.663",
+          "rDelFlag": null,
+          "requiredCore": "1",
+          "rUserId": 0,
+          "mappingQProg": "QINIT 57\nCREG 1\nU3 q[56],(1.57079633,-1.57079633,1.57079633)\nU3 q[56],(3.14159265,0.00000000,0.00000000)\nU3 q[56],(3.14159265,-1.57079633,1.57079633)\nU3 q[56],(3.14159265,-1.57079633,1.57079633)\nU3 q[56],(3.14159265,0.00000000,0.00000000)\nU3 q[56],(1.57079633,1.57079633,4.71238898)\nMEASURE q[56],c[0]\n",
+          "timeStr": null,
+          "pulseTime": "180",
+          "circuitExecuteTime": null,
+          "chipExecuteTime": null,
+          "trCircuitOptimization": null,
+          "logicQubit": null,
+          "chipId": 72,
+          "taskName": null,
+          "chipName": null,
+          "chipQubit": null,
+          "errorDetail": null,
+          "errorMessage": null,
+          "trMappingFlag": 0,
+          "queueNumber": 0,
+          "actualStartTime": "2026-03-09 05:34:17.248",
+          "qstresult": null,
+          "qstfidelity": null,
+          "mappingQubit": "[56]",
+          "measureQubitSize": [
+            1
+          ]
+        }
+      ],
+      "qMachineType": null,
+      "resultCount": 0,
+      "totalTime": 0
+    }
+  },
+  "elapsed_s": 5.679550483000639
+}

@@ -1,0 +1,69 @@
+{
+  "name": "readout_prep0_q62",
+  "task_id": "641B82C00A8427BCE26EF4F449C21C2E",
+  "qprog": "QINIT 72\nCREG 1\nMEASURE q[62],c[0]",
+  "shots": 1000,
+  "counts": {
+    "0x0": 983,
+    "0x1": 17
+  },
+  "raw_detail": {
+    "qcodeTaskNewVo": {
+      "id": null,
+      "encodeId": null,
+      "createTime": null,
+      "userId": 0,
+      "userName": null,
+      "updTime": null,
+      "delFlag": null,
+      "svgPath": null,
+      "initQProg": null,
+      "taskName": null,
+      "taskConfigList": null,
+      "taskResultList": [
+        {
+          "rid": 0,
+          "rTaskId": "641B82C00A8427BCE26EF4F449C21C2E",
+          "qprog": "QINIT 72\nCREG 1\nMEASURE q[62],c[0]",
+          "rCreateTime": "2026-03-09 05:33:19.240",
+          "taskState": "3",
+          "taskResult": "{\"value\": [0.9999803,1.97E-5],\"key\": [\"0\",\"1\"]}",
+          "probCount": "{\"key\":[\"0x0\", \"0x1\"],\"value\":[983, 17]}",
+          "rRelationId": 0,
+          "rQMachineType": "5",
+          "startTime": "2026-03-09 05:33:19.390",
+          "endTime": "2026-03-09 05:33:21.513",
+          "rDelFlag": null,
+          "requiredCore": "1",
+          "rUserId": 0,
+          "mappingQProg": "QINIT 63\nCREG 1\nMEASURE q[62],c[0]\n",
+          "timeStr": null,
+          "pulseTime": "0",
+          "circuitExecuteTime": null,
+          "chipExecuteTime": null,
+          "trCircuitOptimization": null,
+          "logicQubit": null,
+          "chipId": 72,
+          "taskName": null,
+          "chipName": null,
+          "chipQubit": null,
+          "errorDetail": null,
+          "errorMessage": null,
+          "trMappingFlag": 0,
+          "queueNumber": 0,
+          "actualStartTime": "2026-03-09 05:33:19.296",
+          "qstresult": null,
+          "qstfidelity": null,
+          "mappingQubit": "[62]",
+          "measureQubitSize": [
+            1
+          ]
+        }
+      ],
+      "qMachineType": null,
+      "resultCount": 0,
+      "totalTime": 0
+    }
+  },
+  "elapsed_s": 5.691650025000854
+}

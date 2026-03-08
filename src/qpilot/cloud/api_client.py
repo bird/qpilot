@@ -77,9 +77,9 @@ class OriginCloudClient:
         task_id: str,
     ) -> dict[str, Any]:
         """Query status and results for a submitted task."""
-        return await self._get(
+        return await self._post_form(
             "/api/taskApi/getTaskDetail.json",
-            params={"taskId": task_id},
+            data={"taskId": task_id},
         )
 
     async def submit_task(
@@ -155,9 +155,20 @@ class OriginCloudClient:
         path: str,
         body: dict[str, Any],
     ) -> dict[str, Any]:
-        """Send an authenticated POST request."""
+        """Send an authenticated JSON POST request."""
         url = f"{self._base_url}{path}"
         resp = await self._client.post(url, json=body)
+        resp.raise_for_status()
+        return self._unwrap(resp.json())
+
+    async def _post_form(
+        self,
+        path: str,
+        data: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Send an authenticated form-encoded POST request."""
+        url = f"{self._base_url}{path}"
+        resp = await self._client.post(url, data=data)
         resp.raise_for_status()
         return self._unwrap(resp.json())
 

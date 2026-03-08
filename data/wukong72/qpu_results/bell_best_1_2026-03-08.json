@@ -1,0 +1,71 @@
+{
+  "name": "bell_best_1",
+  "task_id": "78778C2FE6BC194906977884FFCC5D59",
+  "qprog": "QINIT 72\nCREG 2\nH q[56]\nCNOT q[56],q[62]\nMEASURE q[56],c[0]\nMEASURE q[62],c[1]",
+  "shots": 1000,
+  "counts": {
+    "0x0": 471,
+    "0x1": 94,
+    "0x2": 54,
+    "0x3": 381
+  },
+  "raw_detail": {
+    "qcodeTaskNewVo": {
+      "id": null,
+      "encodeId": null,
+      "createTime": null,
+      "userId": 0,
+      "userName": null,
+      "updTime": null,
+      "delFlag": null,
+      "svgPath": null,
+      "initQProg": null,
+      "taskName": null,
+      "taskConfigList": null,
+      "taskResultList": [
+        {
+          "rid": 0,
+          "rTaskId": "78778C2FE6BC194906977884FFCC5D59",
+          "qprog": "QINIT 72\nCREG 2\nH q[56]\nCNOT q[56],q[62]\nMEASURE q[56],c[0]\nMEASURE q[62],c[1]",
+          "rCreateTime": "2026-03-09 05:33:52.922",
+          "taskState": "3",
+          "taskResult": "{\"value\": [0.4235712,0,0.0043163,0.5721124],\"key\": [\"00\",\"01\",\"10\",\"11\"]}",
+          "probCount": "{\"key\":[\"0x0\", \"0x1\", \"0x2\", \"0x3\"],\"value\":[471, 94, 54, 381]}",
+          "rRelationId": 0,
+          "rQMachineType": "5",
+          "startTime": "2026-03-09 05:33:53.021",
+          "endTime": "2026-03-09 05:33:55.247",
+          "rDelFlag": null,
+          "requiredCore": "1",
+          "rUserId": 0,
+          "mappingQProg": "QINIT 63\nCREG 2\nU3 q[56],(1.57079633,0.00000000,3.14159265)\nU3 q[62],(1.57079633,0.00000000,3.14159265)\nCZ q[56],q[62]\nMEASURE q[56],c[0]\nU3 q[62],(1.57079633,0.00000000,3.14159265)\nMEASURE q[62],c[1]\n",
+          "timeStr": null,
+          "pulseTime": "100",
+          "circuitExecuteTime": null,
+          "chipExecuteTime": null,
+          "trCircuitOptimization": null,
+          "logicQubit": null,
+          "chipId": 72,
+          "taskName": null,
+          "chipName": null,
+          "chipQubit": null,
+          "errorDetail": null,
+          "errorMessage": null,
+          "trMappingFlag": 0,
+          "queueNumber": 0,
+          "actualStartTime": "2026-03-09 05:33:52.962",
+          "qstresult": null,
+          "qstfidelity": null,
+          "mappingQubit": "[56,62]",
+          "measureQubitSize": [
+            2
+          ]
+        }
+      ],
+      "qMachineType": null,
+      "resultCount": 0,
+      "totalTime": 0
+    }
+  },
+  "elapsed_s": 5.630206663001445
+}
