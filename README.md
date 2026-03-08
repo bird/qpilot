@@ -157,6 +157,67 @@ from qpilot import QPilotClient, HardwareType
 client = QPilotClient(host="10.0.0.1", hardware=HardwareType.SUPERCONDUCTING)
 ```
 
+## Real hardware results
+
+Tested on Origin Quantum's Wukong 72-qubit superconducting chip (2026-03-08).
+QPilot fetched live calibration data, selected optimal qubits, ran 21 circuits
+at 1000 shots each, and applied error mitigation. Full results in
+[`data/wukong72/qpu_report_2026-03-08.md`](data/wukong72/qpu_report_2026-03-08.md).
+
+### Qubit selection impact
+
+QubitSelector picked Q56–Q62 as the best pair (CZ fidelity 0.9885,
+composite fidelities 0.947 and 0.966). The worst pair on-chip, Q50–Q51
+(CZ fidelity 0.9342), served as the control.
+
+| | Q50–Q51 (worst) | Q56–Q62 (best) |
+|--|-----------------|----------------|
+| Raw Bell fidelity | 0.599 | 0.852 |
+| After readout mitigation | 0.864 | 0.954 |
+
+Qubit selection alone accounts for +0.253 in raw Bell fidelity.
+
+### Readout error mitigation
+
+ReadoutMitigator built calibration matrices from 8 prep-and-measure circuits,
+then applied matrix-inverse correction to the Bell state counts.
+
+| Pair | Raw | Mitigated | Improvement |
+|------|-----|-----------|-------------|
+| Q56–Q62 (best) | 0.852 | 0.954 | +10.2% |
+| Q50–Q51 (worst) | 0.599 | 0.864 | +26.5% |
+
+The worst pair benefits more because Q50 has severe readout asymmetry
+(P(0|0) = 0.681, P(1|1) = 0.689) — the mitigator corrects for this.
+
+### Zero-noise extrapolation
+
+ZNEMitigator used unitary folding at scales 1x, 3x, 5x on the Bell circuit:
+
+| Scale | Bell Fidelity |
+|-------|--------------|
+| 1x (raw) | 0.851 |
+| 3x | 0.768 |
+| 5x | 0.694 |
+| Extrapolated (exp) | 0.895 |
+
+### Randomized benchmarking
+
+Single-qubit Clifford RB on the good qubit (Q56) vs the mediocre qubit (Q50):
+
+| Qubit | Depth 1 | Depth 10 | Depth 50 | Fitted gate fidelity |
+|-------|---------|----------|----------|---------------------|
+| Q56 | 0.972 | 0.854 | 0.708 | 0.984 |
+| Q50 | 0.645 | 0.610 | 0.488 | 0.773 |
+
+### Combined gain
+
+Choosing the right qubits and applying readout mitigation together yield
++0.355 over the naive baseline (worst-pair raw 0.599 → best-pair mitigated 0.954).
+
+See [`examples/07_wukong72_demo.py`](examples/07_wukong72_demo.py) for
+the full pipeline in a single script.
+
 ## Running tests
 
 ```bash
