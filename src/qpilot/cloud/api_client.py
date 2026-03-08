@@ -1,4 +1,12 @@
-"""Async HTTP client for Origin Quantum Cloud API."""
+"""Async HTTP client for Origin Quantum Cloud API.
+
+Authentication uses the ``oqcs_auth`` header scheme — the API key obtained
+from the Origin Quantum Cloud console is sent as
+``Authorization: oqcs_auth=<key>`` on every request.  No separate login
+step is required.
+
+Data-fetching endpoints (chip config, queue info) consume **zero** QPU time.
+"""
 
 from __future__ import annotations
 
@@ -12,18 +20,9 @@ logger = logging.getLogger(__name__)
 
 _BASE_URL = "https://qcloud.originqc.com.cn"
 
-# Login paths to try in order (API has moved between deployments)
-_LOGIN_PATHS = [
-    "/api/management/pilotosmachinelogin",
-    "/management/pilotosmachinelogin",
-]
-
 
 class OriginCloudClient:
     """Async client for the Origin Quantum Cloud HTTP API.
-
-    Handles authentication, chip config, calibration data, and queue queries.
-    No QPU time is consumed by data-fetching endpoints.
 
     Usage::
 
@@ -46,76 +45,110 @@ class OriginCloudClient:
         if not self._api_key:
             raise ValueError("API key required (pass api_key= or set ORIGINQ_API_KEY)")
         self._base_url = base_url.rstrip("/")
-        self._token: str | None = None
-        self._api_prefix = ""  # determined during login
-        self._client = httpx.AsyncClient(timeout=timeout)
+        self._headers = {
+            "Authorization": f"oqcs_auth={self._api_key}",
+            "Content-Type": "application/json;charset=UTF-8",
+            "Connection": "keep-alive",
+        }
+        self._client = httpx.AsyncClient(timeout=timeout, headers=self._headers)
 
-    async def login(self) -> str:
-        """Authenticate and obtain a session token.
-
-        Tries multiple known login paths to handle API changes between deployments.
-        """
-        last_error = None
-        for path in _LOGIN_PATHS:
-            try:
-                resp = await self._raw_post(path, {"apiKey": self._api_key})
-                token = (
-                    resp.get("token")
-                    or resp.get("Token")
-                    or (resp.get("data", {}) or {}).get("token", "")
-                )
-                if token:
-                    self._token = token
-                    # Remember which prefix worked
-                    self._api_prefix = path.rsplit("/management/", 1)[0]
-                    logger.info("Authenticated via %s", path)
-                    return token
-                last_error = RuntimeError(f"No token in response from {path}: {resp}")
-            except Exception as exc:
-                last_error = exc
-                logger.debug("Login path %s failed: %s", path, exc)
-                continue
-
-        raise RuntimeError(f"All login paths failed. Last error: {last_error}")
+    # ------------------------------------------------------------------
+    # Data endpoints (zero QPU cost)
+    # ------------------------------------------------------------------
 
     async def get_chip_config(
         self,
         chip_id: str = "72",
-        label: int = 1,
     ) -> dict[str, Any]:
-        """Fetch full chip configuration (fidelity matrices, topology, params)."""
-        return await self._post("/management/getchipconfig", {"ChipID": chip_id, "Label": label})
+        """Fetch full chip configuration (per-qubit fidelity, T1/T2, topology).
 
-    async def get_queue_info(
-        self,
-        backend: str = "72",
-        max_tasks: int = 500,
-    ) -> dict[str, Any]:
-        """Query current task queue depth and status."""
-        return await self._post(
-            "/system/queryBackendQueueTask",
-            {"backend": backend, "maxQueryTaskSize": max_tasks},
+        Returns the ``obj`` field of the API response which contains:
+        - ``adjJSON``: per-qubit parameters (readout fidelity, T1, T2, gate fidelity, ...)
+        - ``gateJSON``: CZ gate fidelities for connected qubit pairs
+        - chip-level aggregates (avgT1, avgT2, clops, status, ...)
+        """
+        return await self._get(
+            "/api/taskApi/getFullConfig.json",
+            params={"chipId": chip_id},
         )
 
-    async def get_best_qubit_blocks(
+    async def get_task_detail(
         self,
+        task_id: str,
+    ) -> dict[str, Any]:
+        """Query status and results for a submitted task."""
+        return await self._get(
+            "/api/taskApi/getTaskDetail.json",
+            params={"taskId": task_id},
+        )
+
+    async def submit_task(
+        self,
+        *,
+        qprog: str,
         chip_id: str = "72",
-        label: int = 1,
-        qubit_num: int = 4,
-        block_num: int = 3,
+        shots: int = 1000,
+        task_name: str = "qpilot",
+        qubit_num: int = 72,
+        cbit_num: int = 72,
+        is_mapping: bool = True,
+        is_optimization: bool = True,
+        specified_block: list[int] | None = None,
     ) -> dict[str, Any]:
-        """Query pre-computed best qubit blocks."""
-        return await self._post(
-            "/management/query/best_qubit_blocks",
-            {"ChipID": chip_id, "Label": label, "QubitNum": qubit_num, "QubitBlockNum": block_num},
-        )
+        """Submit a quantum circuit for execution on real hardware.
 
-    async def get_calibration_timestamps(
+        Parameters
+        ----------
+        qprog : str
+            OriginIR text-format circuit (QINIT/CREG/H/CNOT/MEASURE ...).
+        chip_id : str
+            Target chip, default ``"72"`` for Wukong.
+        shots : int
+            Number of measurement repetitions (1000-10000).
+        specified_block : list[int], optional
+            Pin to specific physical qubits.  When provided, set
+            *is_mapping* to ``False`` to prevent the compiler from
+            remapping.
+        """
+        body: dict[str, Any] = {
+            "apiKey": self._api_key,
+            "code": qprog,
+            "codeLen": len(qprog),
+            "qubitNum": qubit_num,
+            "classicalbitNum": cbit_num,
+            "shot": shots,
+            "chipId": int(chip_id),
+            "measureType": 1,
+            "QMachineType": 5,
+            "taskFrom": 4,
+            "taskName": task_name,
+            "isAmend": True,
+            "mappingFlag": is_mapping,
+            "circuitOptimization": is_optimization,
+        }
+        if specified_block is not None:
+            body["specified_block"] = specified_block
+            if is_mapping:
+                logger.warning(
+                    "specified_block provided but is_mapping=True; "
+                    "the compiler may remap qubits away from the pinned block"
+                )
+        return await self._post("/api/taskApi/submitTask.json", body)
+
+    # ------------------------------------------------------------------
+    # Internal HTTP helpers
+    # ------------------------------------------------------------------
+
+    async def _get(
         self,
-        backend: str = "72",
+        path: str,
+        params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Query last calibration update times."""
-        return await self._post("/system/queryChipUpdateTime", {"backend": backend})
+        """Send an authenticated GET request."""
+        url = f"{self._base_url}{path}"
+        resp = await self._client.get(url, params=params)
+        resp.raise_for_status()
+        return self._unwrap(resp.json())
 
     async def _post(
         self,
@@ -123,33 +156,41 @@ class OriginCloudClient:
         body: dict[str, Any],
     ) -> dict[str, Any]:
         """Send an authenticated POST request."""
-        if self._token:
-            body = {**body, "token": self._token}
-        return await self._raw_post(f"{self._api_prefix}{path}", body)
-
-    async def _raw_post(
-        self,
-        path: str,
-        body: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Send a POST request and handle Origin API response wrapping."""
         url = f"{self._base_url}{path}"
         resp = await self._client.post(url, json=body)
         resp.raise_for_status()
-        data = resp.json()
+        return self._unwrap(resp.json())
 
-        if isinstance(data, dict) and "code" in data:
-            code = data.get("code")
-            if code not in (0, "0", None, "success"):
-                msg = data.get("message") or data.get("msg") or str(data)
-                raise RuntimeError(f"API error (code={code}): {msg}")
-            if "data" in data:
-                return data["data"]
+    @staticmethod
+    def _unwrap(data: Any) -> dict[str, Any]:
+        """Handle Origin API response envelope.
+
+        Successful responses: ``{"success": true, "code": 10000, "obj": {...}}``
+        Error responses:      ``{"success": false, "code": NNNNN, "message": "..."}``
+        """
+        if not isinstance(data, dict):
+            return data
+
+        success = data.get("success")
+        code = data.get("code")
+
+        if success is False or (code is not None and code != 10000):
+            msg = data.get("message") or data.get("msg") or str(data)
+            raise RuntimeError(f"API error (code={code}): {msg}")
+
+        if "obj" in data and data["obj"] is not None:
+            return data["obj"]
+        if "data" in data:
+            return data["data"]
         return data
 
+    # ------------------------------------------------------------------
+    # Context manager
+    # ------------------------------------------------------------------
+
     async def start(self) -> None:
-        """Login to obtain session token."""
-        await self.login()
+        """Verify connectivity (no login needed — auth is per-request)."""
+        logger.info("OriginCloudClient ready (%s)", self._base_url)
 
     async def stop(self) -> None:
         """Close the HTTP client."""

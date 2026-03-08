@@ -1,7 +1,8 @@
 """Build a real Wukong 72 noise profile and save as JSON fixtures.
 
-Tries the Origin Cloud HTTP API first. Falls back to the local PilotOS
-simulator chip config if the API is unreachable.
+Tries the Origin Cloud HTTP API first (``/api/taskApi/getFullConfig.json``).
+Falls back to the local PilotOS simulator chip config if the API is
+unreachable.
 
 Usage:
     python scripts/fetch_wukong_data.py
@@ -51,15 +52,6 @@ async def try_cloud_fetch() -> dict | None:
             logger.info("Fetching chip config from cloud...")
             config = await cloud.get_chip_config("72")
             save_json(f"cloud_chip_config_{TODAY}.json", config)
-
-            logger.info("Fetching queue info...")
-            queue = await cloud.get_queue_info("72")
-            save_json(f"queue_info_{TODAY}.json", queue)
-
-            logger.info("Fetching calibration timestamps...")
-            cal = await cloud.get_calibration_timestamps("72")
-            save_json(f"calibration_times_{TODAY}.json", cal)
-
             return config
     except Exception as exc:
         logger.warning("Cloud API unavailable (%s), falling back to local config", exc)
@@ -74,8 +66,102 @@ def load_local_config() -> dict:
     return raw["QuantumChipArch"]
 
 
-def build_noise_profile(config: dict) -> tuple[ChipNoiseProfile, dict]:
-    """Build a ChipNoiseProfile from raw chip config data."""
+# ------------------------------------------------------------------
+# Noise profile builders
+# ------------------------------------------------------------------
+
+
+def build_noise_profile_from_cloud(config: dict) -> tuple[ChipNoiseProfile, dict]:
+    """Build ChipNoiseProfile from cloud API response (adjJSON + gateJSON)."""
+    now = datetime.now(UTC)
+    profiles: dict[str, NoiseProfile] = {}
+    topology: dict[str, list[str]] = {}
+
+    adj_json = config.get("adjJSON", {})
+    gate_json = config.get("gateJSON", {})
+
+    # Per-qubit parameters from adjJSON
+    for qid_str, params in adj_json.items():
+        qid = str(qid_str)
+        if not isinstance(params, dict):
+            continue
+
+        # Skip qubits with empty calibration data
+        avg_fid = params.get("averageFidelity", "")
+        if avg_fid == "":
+            continue
+
+        p = NoiseProfile(qubit_id=qid, last_profiled=now)
+
+        # Single-gate (RB) fidelity
+        if avg_fid:
+            try:
+                p.single_gate_fidelity = float(avg_fid)
+            except (TypeError, ValueError):
+                pass
+
+        # Readout fidelity: "P(0|0)/P(1|1)" format
+        read_fid = params.get("readFidelity", "")
+        if isinstance(read_fid, str) and "/" in read_fid:
+            parts = read_fid.split("/")
+            if len(parts) == 2:
+                try:
+                    p.readout_fidelity = (float(parts[0]), float(parts[1]))
+                except (TypeError, ValueError):
+                    pass
+
+        # T1, T2
+        t1 = params.get("T1", "")
+        if t1 != "":
+            try:
+                p.t1_us = float(t1)
+            except (TypeError, ValueError):
+                pass
+
+        t2 = params.get("T2", params.get("Ts2", ""))
+        if t2 != "":
+            try:
+                p.t2star_us = float(t2)
+            except (TypeError, ValueError):
+                pass
+
+        profiles[qid] = p
+
+    # CZ gate fidelities and topology from gateJSON (keys like "4_5")
+    for pair_key, gate_data in gate_json.items():
+        parts = pair_key.split("_")
+        if len(parts) != 2:
+            continue
+        q1, q2 = parts[0], parts[1]
+
+        # Topology
+        topology.setdefault(q1, [])
+        topology.setdefault(q2, [])
+        if q2 not in topology[q1]:
+            topology[q1].append(q2)
+        if q1 not in topology[q2]:
+            topology[q2].append(q1)
+
+        # CZ fidelity
+        fid = gate_data.get("fidelity", "") if isinstance(gate_data, dict) else ""
+        if fid != "":
+            try:
+                fid_val = float(fid)
+                for q in (q1, q2):
+                    if q not in profiles:
+                        profiles[q] = NoiseProfile(qubit_id=q, last_profiled=now)
+                profiles[q1].two_gate_fidelities[q2] = fid_val
+                profiles[q2].two_gate_fidelities[q1] = fid_val
+            except (TypeError, ValueError):
+                pass
+
+    chip_profile = ChipNoiseProfile(profiles=profiles, topology=topology, timestamp=now)
+    summary = _build_summary(chip_profile, config)
+    return chip_profile, summary
+
+
+def build_noise_profile_from_local(config: dict) -> tuple[ChipNoiseProfile, dict]:
+    """Build ChipNoiseProfile from local PilotOS chip config."""
     now = datetime.now(UTC)
     profiles: dict[str, NoiseProfile] = {}
     topology: dict[str, list[str]] = {}
@@ -136,7 +222,6 @@ def build_noise_profile(config: dict) -> tuple[ChipNoiseProfile, dict]:
     # Topology from CompensateAngle keys (format: "CZ(q1,q2)")
     compensate = config.get("CompensateAngle", {})
     for pair_key in compensate:
-        # Parse "CZ(0,1)" -> ("0", "1")
         inner = pair_key.replace("CZ(", "").replace(")", "")
         parts = inner.split(",")
         if len(parts) != 2:
@@ -149,7 +234,7 @@ def build_noise_profile(config: dict) -> tuple[ChipNoiseProfile, dict]:
         if q1 not in topology[q2]:
             topology[q2].append(q1)
 
-    # Also use AdjMatrix if present
+    # AdjMatrix
     adj = config.get("AdjMatrix", {})
     if isinstance(adj, dict):
         for q1, neighbors in adj.items():
@@ -164,32 +249,6 @@ def build_noise_profile(config: dict) -> tuple[ChipNoiseProfile, dict]:
                     if q1 not in topology[q2]:
                         topology[q2].append(q1)
 
-    # Top-level RB fidelity data (from cloud API responses)
-    sg_fidelity = _get(config, "SingleGateFidelity", "singleGateFidelity")
-    if isinstance(sg_fidelity, dict) and "qubit" in sg_fidelity:
-        for qid, fid in zip(sg_fidelity["qubit"], sg_fidelity.get("fidelity", [])):
-            qid = str(qid)
-            if qid not in profiles:
-                profiles[qid] = NoiseProfile(qubit_id=qid, last_profiled=now)
-            try:
-                profiles[qid].single_gate_fidelity = float(fid)
-            except (TypeError, ValueError):
-                pass
-
-    dg_fidelity = _get(config, "DoubleGateFidelity", "doubleGateFidelity")
-    if isinstance(dg_fidelity, dict) and "qubitPair" in dg_fidelity:
-        for pair_str, fid in zip(dg_fidelity.get("qubitPair", []), dg_fidelity.get("fidelity", [])):
-            parts = str(pair_str).split("-")
-            if len(parts) != 2:
-                continue
-            q1, q2 = parts
-            fid_val = float(fid)
-            for q in (q1, q2):
-                if q not in profiles:
-                    profiles[q] = NoiseProfile(qubit_id=q, last_profiled=now)
-            profiles[q1].two_gate_fidelities[q2] = fid_val
-            profiles[q2].two_gate_fidelities[q1] = fid_val
-
     # Available qubits
     for q in config.get("AvailableQubits", []):
         qid = str(q)
@@ -197,16 +256,28 @@ def build_noise_profile(config: dict) -> tuple[ChipNoiseProfile, dict]:
             profiles[qid] = NoiseProfile(qubit_id=qid, last_profiled=now)
 
     chip_profile = ChipNoiseProfile(profiles=profiles, topology=topology, timestamp=now)
+    summary = _build_summary(chip_profile, config)
+    return chip_profile, summary
 
-    summary = {
+
+def _build_summary(chip_profile: ChipNoiseProfile, config: dict) -> dict:
+    """Build JSON-serializable summary from a ChipNoiseProfile."""
+    summary: dict[str, Any] = {
         "chip": "Wukong 72",
-        "timestamp": now.isoformat(),
-        "num_qubits": len(profiles),
-        "num_connections": sum(len(v) for v in topology.values()) // 2,
+        "source": "cloud" if "adjJSON" in config else "local",
+        "timestamp": chip_profile.timestamp.isoformat(),
+        "calibration_time": config.get("updateTime", ""),
+        "status": config.get("status", ""),
+        "clops": config.get("clops", ""),
+        "num_qubits": len(chip_profile.profiles),
+        "num_connections": sum(len(v) for v in chip_profile.topology.values()) // 2,
         "profiles": {},
-        "topology": topology,
+        "topology": chip_profile.topology,
     }
-    for qid, p in sorted(profiles.items(), key=lambda x: int(x[0]) if x[0].isdigit() else x[0]):
+    for qid, p in sorted(
+        chip_profile.profiles.items(),
+        key=lambda x: int(x[0]) if x[0].isdigit() else x[0],
+    ):
         summary["profiles"][qid] = {
             "single_gate_fidelity": p.single_gate_fidelity,
             "readout_fidelity": list(p.readout_fidelity),
@@ -215,14 +286,19 @@ def build_noise_profile(config: dict) -> tuple[ChipNoiseProfile, dict]:
             "t1_us": p.t1_us,
             "t2star_us": p.t2star_us,
         }
+    return summary
 
-    return chip_profile, summary
+
+# ------------------------------------------------------------------
+# Report generation
+# ------------------------------------------------------------------
 
 
-def qubit_report(chip_profile: ChipNoiseProfile) -> str:
+def qubit_report(chip_profile: ChipNoiseProfile, *, source: str = "cloud") -> str:
     """Generate a qubit quality report."""
     lines = [
         f"# Wukong 72 — Qubit Quality Report ({TODAY})",
+        f"Data source: {source}",
         "",
         f"Profiled qubits: {len(chip_profile.profiles)}",
         f"CZ connections: {sum(len(v) for v in chip_profile.topology.values()) // 2}",
@@ -309,25 +385,26 @@ async def main():
     # Try cloud API first, fall back to local config
     cloud_config = await try_cloud_fetch()
 
-    if cloud_config:
-        config = cloud_config
-        logger.info("Using cloud chip config")
+    if cloud_config and "adjJSON" in cloud_config:
+        source = "cloud"
+        chip_profile, summary = build_noise_profile_from_cloud(cloud_config)
+        logger.info(
+            "Built noise profile from cloud data: %d qubits, %d connections",
+            len(chip_profile.profiles),
+            sum(len(v) for v in chip_profile.topology.values()) // 2,
+        )
     else:
+        source = "local"
         config = load_local_config()
         save_json(f"chip_config_{TODAY}.json", config)
         logger.info("Using local chip config (%d keys)", len(config))
+        chip_profile, summary = build_noise_profile_from_local(config)
 
-    # Build noise profile
-    chip_profile, summary = build_noise_profile(config)
     save_json(f"noise_profile_{TODAY}.json", summary)
     save_json("topology.json", summary["topology"])
 
-    available = config.get("AvailableQubits", [])
-    if available:
-        save_json("available_qubits.json", available)
-
     # Generate report
-    report = qubit_report(chip_profile)
+    report = qubit_report(chip_profile, source=source)
     report_path = DATA_DIR / f"qubit_report_{TODAY}.md"
     report_path.write_text(report)
     logger.info("Saved qubit report to %s", report_path)
