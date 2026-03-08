@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qpilot"
+version = "0.1.0"
+description = "Quantum hardware instrumentation, noise characterization, and error mitigation for PilotOS"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+readme = "README.md"
+keywords = ["quantum", "pilotos", "superconducting", "error-mitigation", "zmq"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "pyzmq>=25.0",
+    "pydantic>=2.5",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "httpx>=0.25",
+]
+
+[project.urls]
+Repository = "https://github.com/bird/qpilot"
+Issues = "https://github.com/bird/qpilot/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qpilot"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
